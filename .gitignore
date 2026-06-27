@@ -1,0 +1,23 @@
+.*env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+**/.DS_Store
+
+# Generated SQLite DB
+*.db
+
+# Claude files (used for dev)
+CLAUDE.md
+.claude/
+dev/
