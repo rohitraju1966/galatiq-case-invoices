@@ -34,4 +34,4 @@ Your previous reasoning:
 Senior auditor's critique:
 {critique}
 
-Take the auditor's points into consideration and make your final decision. You must now approve or reject — no further escalation."""
+Take the auditor's points into consideration and make your final decision. You must now approve or reject, no further escalation."""
