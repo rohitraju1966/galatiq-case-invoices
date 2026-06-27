@@ -26,12 +26,12 @@ Validation flags:
 Respond in JSON format:
 {{"reasoning": "your step by step reasoning", "decision": "approved/rejected"}}"""
 
-VP_CRITIQUE_SECTION = """A senior auditor has reviewed your previous reasoning and provided this critique:
+VP_CRITIQUE_SECTION = """This invoice was escalated to management review because the total exceeds ${threshold}. A senior auditor has independently verified the facts using tools you did not have access to (audit trail, cumulative spending summaries) and provided this critique.
 
 Your previous reasoning:
 {initial_reasoning}
 
-Auditor's critique:
+Senior auditor's critique:
 {critique}
 
-Address each point in the critique before making your final decision. You must now approve or reject — no further escalation."""
+Take the auditor's points into consideration and make your final decision. You must now approve or reject — no further escalation."""

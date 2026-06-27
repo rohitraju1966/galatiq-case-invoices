@@ -2,12 +2,13 @@ from typing import TypedDict
 
 class InvoiceState(TypedDict):
     invoice_path: str                    
-    invoice_data: dict                   # extracted fields from LLM
-    line_items: list[dict]               # extracted line items (will be filled after extraction node)
-    validation_flags: list[str]          # flags from deterministic checks (will be filled after validation node)
-    status: str                          # extracted -> validated -> approved/rejected/management_review -> paid  (will orchestrate the flow)
-    review_note: str                     # VP/management reasoning (will be filled by either the VP or management)
-    reviewed_by: str                     # which agent reviewed (VP/Management)
+    invoice_data: dict                   
+    line_items: list[dict]               # Will be filled after extraction node
+    validation_flags: list[str]          # Will be filled after validation node
+    status: str                          # Will orchestrate the flow
+    review_note: str                      
+    reviewed_by: str                     
     trn_id: int                          # DB transaction ID (set after extraction inserts)
-    payment_txn_id: str                  # set after payment
-    review_count: int                    # tracks VP-management review rounds
+    payment_txn_id: str                  
+    critique: str                        # Fed back to VP on revision pass, seperate from review note because VP will require both in the revision pass
+    review_count: int                    # Tracks VP-management review rounds
