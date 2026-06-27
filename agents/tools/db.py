@@ -25,7 +25,7 @@ class InvoiceDB:
     def insert_invoice(self, data: InvoiceExtraction, source_file: str)->int:
         invoice = TransactionInvoices(
             invoice_number=data.invoice_number,
-            merchant_id=data.merchant_name,
+            merchant_name=data.merchant_name,
             invoice_date=self._parse_date(data.invoice_date),
             due_date=self._parse_date(data.due_date),
             subtotal=data.subtotal,
@@ -111,3 +111,8 @@ class InvoiceDB:
         return self.session.query(MasterMerchant).filter(
             MasterMerchant.merchant_name == merchant_name,
         ).first()
+    
+    def get_invoice_history(self, merchant_name: str) -> list:
+        return self.session.query(TransactionInvoices).filter(
+            TransactionInvoices.merchant_name == merchant_name,
+        ).all()

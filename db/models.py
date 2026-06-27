@@ -32,7 +32,7 @@ class TransactionInvoices(Base):
 
     trn_id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
     invoice_number = Column(Text, nullable=False)
-    merchant_id = Column(Text, nullable=True)
+    merchant_name = Column(Text, nullable=True)
     invoice_date = Column(Date, nullable=True)
     due_date = Column(Date, nullable=True)
     subtotal = Column(Float, nullable=True)

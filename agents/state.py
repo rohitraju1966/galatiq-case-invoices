@@ -9,4 +9,5 @@ class InvoiceState(TypedDict):
     review_note: str                     # VP/management reasoning (will be filled by either the VP or management)
     reviewed_by: str                     # which agent reviewed (VP/Management)
     trn_id: int                          # DB transaction ID (set after extraction inserts)
-    payment_txn_id: str                  # set after payment 
+    payment_txn_id: str                  # set after payment
+    review_count: int                    # tracks VP-management review rounds
