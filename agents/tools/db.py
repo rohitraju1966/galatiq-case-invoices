@@ -116,3 +116,8 @@ class InvoiceDB:
         return self.session.query(TransactionInvoices).filter(
             TransactionInvoices.merchant_name == merchant_name,
         ).all()
+
+    def get_audit_trail(self, trn_id: int) -> list[TransactionAuditLogs]:
+        return self.session.query(TransactionAuditLogs).filter(
+            TransactionAuditLogs.trn_id == trn_id,
+        ).order_by(TransactionAuditLogs.audit_log_id).all()

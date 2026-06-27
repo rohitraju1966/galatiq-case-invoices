@@ -5,8 +5,8 @@ from langgraph.prebuilt import create_react_agent
 
 from agents.state import InvoiceState
 from agents.tools.db import InvoiceDB
-from agents.prompts.vp import VP_PROMPT
-from config import APPROVAL_THRESHOLD, MAX_REVIEW_ROUNDS
+from agents.prompts.vp import VP_PROMPT, VP_CRITIQUE_SECTION
+from config import APPROVAL_THRESHOLD
 from llm import llm
 from agents.tools.vp import get_merchant_details, get_item_details, get_invoice_history
 from agents.tools.utils import parse_decision
@@ -39,24 +39,19 @@ def run_vp(state: InvoiceState, critique_section: str = "") -> str:
 
 db = InvoiceDB()
 def vp_review(state: InvoiceState) -> dict:
-    raw_response = run_vp(state)
+    critique_section = ""
+    if state.get("status") == "vp_review_required":
+        critique_section = VP_CRITIQUE_SECTION.format(
+            threshold=f"{APPROVAL_THRESHOLD:,.0f}",
+            initial_reasoning=state.get("review_note", ""),
+            critique=state.get("critique", ""),
+        )
+
+    raw_response = run_vp(state, critique_section=critique_section)
     decision, reasoning = parse_decision(raw_response)
     logger.info(f"VP decision: {decision}, reasoning: {reasoning}")
 
-    total = state["invoice_data"].get("total", 0) or 0
-
-    # If total is greater than set threshold we move to critique review (management_review) and present VP findings to obtain the review, the review will then be fed to the vp again (until Max reviews)
-    if total > APPROVAL_THRESHOLD and state.get("review_count", 0) < MAX_REVIEW_ROUNDS:
-        db.log_audit(state["trn_id"], "management_review", reasoning, "vp_agent")
-        return {
-            "status": "management_review",
-            "review_count": state.get("review_count", 0) + 1,
-            "review_note": reasoning,
-            "reviewed_by": "vp_agent",
-        }
-
     db.log_audit(state["trn_id"], decision, reasoning, "vp_agent")
-    logger.info(f"VP final decision for trn_id={state['trn_id']}: {decision}")
 
     return {
         "status": decision,
