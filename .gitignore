@@ -1,6 +1,4 @@
 .*env
-
-# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -8,16 +6,13 @@ dist/
 build/
 .eggs/
 *.egg
-
-# Virtual environments
 venv/
 .venv/
+*_env/
 **/.DS_Store
-
-# Generated SQLite DB
+.ruff_cache/
 *.db
-
-# Claude files (used for dev)
 CLAUDE.md
 .claude/
 dev/
+**/__init__.py
