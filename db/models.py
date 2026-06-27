@@ -59,7 +59,7 @@ class TransactionInvoiceItems(Base):
 
     invoice_transaction_id = Column(Integer, primary_key=True, autoincrement=True)
     trn_id = Column(Integer, nullable=False)
-    item_id = Column(Integer, nullable=False)
+    item_name = Column(Text, nullable=False)
     quantity = Column(Integer, nullable=False)
     unit_price = Column(Float, nullable=False)
     line_total = Column(Float, nullable=False)
