@@ -7,3 +7,5 @@ DB_PATH="data/acme.db"
 APPROVAL_THRESHOLD=10_000
 GROK_AI_MODEL="grok-3"
 XAI_API_KEY = os.getenv("XAI_API_KEY", "")
+MAX_REVIEW_ROUNDS=1
+IS_DEV=True

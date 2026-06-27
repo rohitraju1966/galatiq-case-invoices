@@ -2,6 +2,7 @@ import argparse
 import logging
 from agents.nodes.extraction import extract_invoice
 from agents.nodes.validation import validate_invoice
+from agents.nodes.vp import vp_review
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,8 +16,10 @@ def main(invoice_path: str) -> None:
     state = extract_invoice({"invoice_path": invoice_path})
     logger.info(f"Extraction: {state}")
     state = {**{"invoice_path": invoice_path}, **state}
-    result = validate_invoice(state)
-    logger.info(f"Validation: {result}")
+    state = {**state, **validate_invoice(state)}
+    logger.info(f"Validation: {state}")
+    state = {**state, **vp_review(state)}
+    logger.info(f"VP Review: {state}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
