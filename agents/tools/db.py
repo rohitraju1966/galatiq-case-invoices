@@ -67,11 +67,14 @@ class InvoiceDB:
         logger.info(f"Audit log: trn_id={trn_id}, status={status}, by={reviewed_by}")
 
     def is_duplicate(self, invoice_number: str, current_trn_id: int) -> bool:
-        existing = self.session.query(TransactionInvoices).filter(
+        return self.session.query(TransactionAuditLogs).join(
+            TransactionInvoices,
+            TransactionAuditLogs.trn_id == TransactionInvoices.trn_id,
+        ).filter(
             TransactionInvoices.invoice_number == invoice_number,
             TransactionInvoices.trn_id != current_trn_id,
-        ).first()
-        return True if existing else False
+            TransactionAuditLogs.status == "approved",
+        ).first() is not None
 
     def get_item(self, item_name: str) -> tuple[MasterInventory | None, bool]:
         direct = self.session.query(MasterInventory).filter(

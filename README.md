@@ -19,17 +19,17 @@ and paying against an inconsistent legacy database.
 
 Before writing any code, I spoke with an experienced professional (my father) who has
 spent over 15 years building and working with invoice-processing systems. That conversation grounded the design in
-how AP actually runs day to day rather than in textbook assumptions. Three decisions
+how AP actually runs day to day rather than in textbook assumptions. two decisions
 came directly out of it:
 
 - **A dedicated merchant table (an addition beyond the brief).** The assessment only
   specified an inventory table. I added a separate `master_merchants` table holding
   vendor rating, on-time history, and notes, because real systems keep merchant context
   as its own source of truth, independent of any single invoice. It is exactly what makes
-  the Management Agent's merchant-history review possible.
-- **Management as the critic.** Learning how a VP typically escalates higher-value
-  approvals to a management team is what motivated building the critique agent *as* a
-  Management Agent, rather than an abstract "reviewer."
+  the Auditor Agent's merchant-history review possible.
+- **The auditor as the critic.** Learning how high-value approvals get a second set of
+  eyes from an independent auditor is what motivated building the critique agent *as* an
+  Auditor Agent, rather than an abstract "reviewer."
 
 ---
 
@@ -47,7 +47,7 @@ database. The model (Grok) is expensive and occasionally creative, so it's used
 | Extraction | **Grok** | Messy, typo-ridden text → structured fields needs language understanding |
 | Validation | Deterministic | Math, stock, budget, duplicates, facts, not opinions |
 | VP approval | **Grok** | Weighing *combinations* of flags is judgment |
-| Management review | **Grok** | Independent critique of the VP on high-value invoices |
+| Auditor review | **Grok** | Independent critique of the VP on high-value invoices |
 | Payment | Deterministic | Money moves only on a hard `approved` status |
 
 Every stage writes a human-readable reason to an append-only audit log, so any
@@ -63,7 +63,7 @@ flowchart TD
     B --> C[Validation<br/>deterministic checks]
     C --> D[VP Agent<br/>Grok · ReAct + tools]
 
-    D -->|"total &gt; $10K<br/>and review round &lt; 1"| M[Management Agent<br/>Grok · critic with extra tools]
+    D -->|"total &gt; $10K<br/>and review round &lt; 1"| M[Auditor Agent<br/>Grok · critic with extra tools]
     M -.->|"critique injected back into the SAME VP node<br/>(loop, capped at 1 round)"| D
 
     D -->|approved| P[Payment<br/>deterministic]
@@ -78,7 +78,7 @@ flowchart TD
     style P fill:#3a2d2d,color:#fff
 ```
 
-> **The dotted edge is a loop, not a straight line.** Management does not flow
+> **The dotted edge is a loop, not a straight line.** The auditor does not flow
 > *forward* to a payment step. It hands its critique **back into the same VP node**,
 > which re-decides with that critique injected. A `review_count` in the shared state,
 > capped by `MAX_REVIEW_ROUNDS` (default **1**), bounds the loop so it runs at most once
@@ -113,7 +113,7 @@ nodes never call each other directly. They're pure functions of
    investigates, weighs the *combination* of flags, and returns a JSON
    `{reasoning, decision}`. Under the $10K threshold it decides alone.
 
-4. **Management review (Grok, only > $10K).** A **critic**, not a second approver.
+4. **Auditor review (Grok, only > $10K).** A **critic**, not a second approver.
    It re-examines the VP's reasoning with *more tools than the VP had*, including
    two it exclusively owns: `get_audit_trail` (the full decision history) and
    `get_spending_summary` (portfolio-level approved spend). This follows the
@@ -127,8 +127,8 @@ nodes never call each other directly. They're pure functions of
 
 ### The critique loop
 
-For invoices over $10K, the graph runs **VP → Management → VP**. The VP makes an
-initial call; management critiques it using its extra tools; the critique is
+For invoices over $10K, the graph runs **VP → Auditor → VP**. The VP makes an
+initial call; the auditor critiques it using its extra tools; the critique is
 injected back into the VP's prompt (with a note that it was escalated for crossing
 the threshold) and the VP makes a **final, binding** decision. `MAX_REVIEW_ROUNDS`
 (default 1) caps the loop so it can't ping-pong.
@@ -239,7 +239,7 @@ operator sees end-to-end, with screenshots.*
 - **Graph owns routing, nodes stay pure.** Threshold checks, loop counters, and
   escalation all live in the graph's edges, not buried inside node functions.
   This keeps each stage independently testable and the control flow in one place.
-- **The critic is strictly a critic.** Management returns reasoning, never a
+- **The critic is strictly a critic.** The auditor returns reasoning, never a
   verdict. This removed a real ambiguity (does "approved" mean *I approve the
   invoice* or *I approve the VP's logic?*) and keeps the VP as the single
   decision-maker.

@@ -11,4 +11,4 @@ class InvoiceState(TypedDict):
     trn_id: int                          # DB transaction ID (set after extraction inserts)
     payment_txn_id: str                  
     critique: str                        # Fed back to VP on revision pass, seperate from review note because VP will require both in the revision pass
-    review_count: int                    # Tracks VP-management review rounds
+    review_count: int                    # Tracks VP-auditor review rounds
