@@ -50,6 +50,12 @@ def vp_review(state: InvoiceState) -> dict:
     raw_response = run_vp(state, critique_section=critique_section)
     decision, reasoning = parse_decision(raw_response)
     logger.info(f"VP decision: {decision}, reasoning: {reasoning}")
+    
+    # Check if it's approved and had a foreign_currency flag, if it does exist then update the decision and reasoning to make sure no foreign currency invoices slipped through the agent
+    if decision == "approved" and any(f.startswith("foreign_currency") for f in state.get("validation_flags", [])):
+        decision = "fx_review_hold"
+        reasoning = f"[Auto-held: foreign currency requires manual FX verification before payment] {reasoning}"
+        logger.info("Foreign-currency invoice coerced to fx_review_hold")
 
     db.log_audit(state["trn_id"], decision, reasoning, "vp_agent")
 

@@ -16,6 +16,11 @@ def validate_invoice(state: InvoiceState) -> dict:
         db.log_audit(trn_id, "rejected", "Duplicate invoice", "validation")
         return {"status": "rejected", "validation_flags": ["duplicate_invoice"]}
 
+    # Currency convertion would require an API and as external API should not be used, flagging currencies other than USD and setting status as pending for approval along with VP reasoning
+    is_foreign = (data.get("currency") or "USD") != "USD"
+    if is_foreign:
+        flags.append(f"foreign_currency: {data['currency']} (price/budget not verified against USD catalog)")
+
     for item in state["line_items"]:
         master, was_normalized = db.get_item(item["item_name"])
 
@@ -26,7 +31,7 @@ def validate_invoice(state: InvoiceState) -> dict:
         if was_normalized:
             flags.append(f"normalized_match: {item['item_name']} -> {master.item_name}")
 
-        if item["unit_price"] != master.unit_price:
+        if not is_foreign and item["unit_price"] != master.unit_price:
             flags.append(f"price_mismatch: {item['item_name']} (invoice={item['unit_price']}, master={master.unit_price})")
 
     # To make sure that we account for all the approved invoices and also to group all the similar items in the same invoice, we find total approved quantity and budge and group by for the invoice and find the total (sum of the two shoul be less than master inventory values)
@@ -45,7 +50,7 @@ def validate_invoice(state: InvoiceState) -> dict:
         if approved["qty"] + totals["qty"] > master.stock_qty:
             flags.append(f"stock_exceeded: {item_name} (approved={approved['qty']}, invoice={totals['qty']}, stock={master.stock_qty})")
 
-        if approved["spend"] + totals["spend"] > master.item_budget:
+        if not is_foreign and approved["spend"] + totals["spend"] > master.item_budget:
             flags.append(f"budget_exceeded: {item_name} (approved={approved['spend']}, invoice={totals['spend']}, budget={master.item_budget})")
 
     # Math checks
