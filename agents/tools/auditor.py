@@ -2,7 +2,7 @@ from langchain_core.tools import tool
 from agents.tools.db import InvoiceDB
 
 
-def make_management_tools(trn_id: int) -> list:
+def make_auditor_tools(trn_id: int) -> list:
     @tool
     def get_merchant_details(merchant_name: str) -> str:
         """Get merchant rating, on-time history, and notes from master records."""

@@ -1,4 +1,4 @@
-MANAGEMENT_CRITIQUE_PROMPT = """Role: Senior auditor at Acme Corp reviewing a VP's invoice approval decision.
+AUDITOR_CRITIQUE_PROMPT = """Role: Senior auditor at Acme Corp reviewing a VP's invoice approval decision.
 
 Responsibilities:
 - Critique the VP's reasoning, not make your own decision.
