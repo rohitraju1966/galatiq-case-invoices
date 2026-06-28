@@ -12,6 +12,11 @@ def process_payment(state: InvoiceState) -> dict:
     if state["status"] != "approved":
         return {}
 
+    # Deterministic check (can be removed if we handle currency convertions on validation node, would require external API)
+    if any(f.startswith("foreign_currency") for f in state.get("validation_flags", [])):
+        logger.info("Payment blocked: unresolved foreign_currency flag")
+        return {}
+
     merchant = state["invoice_data"].get("merchant_name", "Unknown")
     amount = state["invoice_data"].get("total", 0)
 

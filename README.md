@@ -1,115 +1,260 @@
-# Galatiq Case: Invoice Processing Automation
+# Invoice Processing Automation
 
-## Background
+A multi-agent accounts-payable system for **Acme Corp**. It ingests messy invoices
+(PDF, JSON, CSV, XML, TXT), validates them against an inventory + vendor database,
+reasons through approval like a finance team would, and pays the clean ones, all
+locally, with a full audit trail behind every decision.
 
-Acme Corp is a PE-backed manufacturing firm losing **$2M/year** on manual invoice processing. Invoices arrive via email as PDFs in messy formats with frequent errors. Staff manually extract data, validate against a legacy inventory database (inconsistent), obtain VP approval (via email chains), and process payment (via a banking API).
+> Built for the Galatiq FDE take-home. The original brief lives in [REQUIREMENTS.md](REQUIREMENTS.md).
 
-**Current pain points:**
-- 30% error rate
-- 5-day processing delays
-- Frustrated stakeholders
+**The problem in one line:** Acme loses ~$2M/year to manual AP, a 30% error rate
+and 5-day delays from staff hand-keying invoices, chasing VP sign-off over email,
+and paying against an inconsistent legacy database.
 
-## Objective
+---
 
-Build a **multi-agent system** that automates the end-to-end invoice processing workflow. The system must run as a working prototype — not just designs or slides.
+## A note on approach
 
-## Workflow
+Before writing any code, I spoke with an experienced professional (my father) who has
+spent over 15 years building and working with invoice-processing systems. That conversation grounded the design in
+how AP actually runs day to day rather than in textbook assumptions. Three decisions
+came directly out of it:
 
-The system should handle four stages:
+- **A dedicated merchant table (an addition beyond the brief).** The assessment only
+  specified an inventory table. I added a separate `master_merchants` table holding
+  vendor rating, on-time history, and notes, because real systems keep merchant context
+  as its own source of truth, independent of any single invoice. It is exactly what makes
+  the Management Agent's merchant-history review possible.
+- **Management as the critic.** Learning how a VP typically escalates higher-value
+  approvals to a management team is what motivated building the critique agent *as* a
+  Management Agent, rather than an abstract "reviewer."
 
-1. **Ingestion** — Extract structured data from invoice documents (PDFs, text files). Fields include: Vendor, Amount, Items (with quantities), and Due Date. Expect unstructured text, typos, missing data, and potentially fraudulent entries.
+---
 
-2. **Validation** — Verify extracted data against a mock inventory database (SQLite). Flag mismatches such as quantity exceeding available stock or items not found in inventory.
+## The core idea
 
-3. **Approval** — Simulate VP-level review with rule-based decision-making (e.g., invoices over $10K require additional scrutiny). The agent should reason through approval/rejection with a reflection or critique loop.
+> **Reasoning → the model. Correctness and money → deterministic code. The model never decides to pay.**
 
-4. **Payment** — If approved, call a mock payment function. If rejected, log the rejection with reasoning.
+Most of an AP workflow is not a reasoning problem, it's arithmetic, lookups, and
+policy. Those are wrong-answer-intolerant, so they run as plain Python against the
+database. The model (Grok) is expensive and occasionally creative, so it's used
+*only* where judgment genuinely helps:
 
-## Technical Requirements
-
-- **LLM Integration**: Use xAI's Grok as the core reasoning engine (via the xAI API at https://grok.x.ai). Other models are acceptable if you don't have an API key.
-- **Multi-Agent Orchestration**: Use a framework such as LangGraph, CrewAI, AutoGen, or a custom solution.
-- **Agent Capabilities**: Function calling / tool use, structured outputs, and self-correction loops.
-- **Runtime**: Assume no internet for external APIs — simulate everything locally.
-- **Tech Stack**: Python (preferred), with libraries like `langchain`, `crewai`, `autogen`, `pdfplumber`, `PyMuPDF`, etc. Run locally — no cloud deployment.
-
-## Provided Resources
-
-### Mock Invoice Data
-
-Sample invoices are provided in the `data/invoices/` directory in various formats (PDF, CSV, JSON, TXT). Use these as inputs for testing. The data intentionally includes a mix of clean entries and problematic ones — identifying and handling issues is part of the challenge.
-
-### Mock Inventory Database (Required Setup)
-
-Before running the system, you **must** create a local SQLite database that the validation agent will check invoices against. The sample invoices in `data/invoices/` reference specific items and quantities — your database needs to contain matching inventory records so the validation stage can flag mismatches, out-of-stock items, and unknown products.
-
-Below is a starter schema and seed data that covers the core items referenced across the provided invoices:
-
-```python
-import sqlite3
-
-conn = sqlite3.connect('inventory.db')  # Persist to file so all agents can access it
-cursor = conn.cursor()
-
-cursor.execute('CREATE TABLE IF NOT EXISTS inventory (item TEXT PRIMARY KEY, stock INTEGER)')
-cursor.execute("""
-    INSERT INTO inventory VALUES
-    ('WidgetA', 15),
-    ('WidgetB', 10),
-    ('GadgetX', 5),
-    ('FakeItem', 0)
-""")
-conn.commit()
-```
-
-**Why this matters:** The sample invoices are designed to test your validation logic against this database. For example:
-
-| Scenario | Invoice | What should happen |
+| Stage | Who does it | Why |
 |---|---|---|
-| Normal order within stock | INV-1001, INV-1004, INV-1006 | Items found, quantities valid — passes validation |
-| Quantity exceeds stock | INV-1002 (requests 20× GadgetX, only 5 in stock) | Flagged as stock mismatch |
-| Fraudulent / zero-stock item | INV-1003 (references FakeItem, 0 stock) | Flagged as out of stock or suspicious |
-| Item not in database at all | INV-1008 (SuperGizmo, MegaSprocket), INV-1016 (WidgetC) | Flagged as unknown item |
-| Invalid data | INV-1009 (negative quantity) | Flagged as data integrity issue |
+| Extraction | **Grok** | Messy, typo-ridden text → structured fields needs language understanding |
+| Validation | Deterministic | Math, stock, budget, duplicates, facts, not opinions |
+| VP approval | **Grok** | Weighing *combinations* of flags is judgment |
+| Management review | **Grok** | Independent critique of the VP on high-value invoices |
+| Payment | Deterministic | Money moves only on a hard `approved` status |
 
-You may extend the seed data with additional items or columns (e.g., unit price, category) to support richer validation — the above is the minimum needed to exercise the provided test invoices. If you want your system to also validate pricing or vendor information, consider adding tables for those as well.
+Every stage writes a human-readable reason to an append-only audit log, so any
+decision can be explained after the fact.
 
-### Mock Payment API
+---
 
-```python
-def mock_payment(vendor, amount):
-    print(f"Paid {amount} to {vendor}")
-    return {"status": "success"}
+## Architecture
+
+```mermaid
+flowchart TD
+    A[Invoice file] --> B[Extraction Agent<br/>Grok · structured output]
+    B --> C[Validation<br/>deterministic checks]
+    C --> D[VP Agent<br/>Grok · ReAct + tools]
+
+    D -->|"total &gt; $10K<br/>and review round &lt; 1"| M[Management Agent<br/>Grok · critic with extra tools]
+    M -.->|"critique injected back into the SAME VP node<br/>(loop, capped at 1 round)"| D
+
+    D -->|approved| P[Payment<br/>deterministic]
+    D -->|rejected| E([rejected])
+    D -->|foreign currency| H([fx_review_hold])
+    P --> F([paid])
+
+    style B fill:#2d3a4a,color:#fff
+    style D fill:#2d3a4a,color:#fff
+    style M fill:#2d3a4a,color:#fff
+    style C fill:#3a2d2d,color:#fff
+    style P fill:#3a2d2d,color:#fff
 ```
 
-### Grok API Setup
+> **The dotted edge is a loop, not a straight line.** Management does not flow
+> *forward* to a payment step. It hands its critique **back into the same VP node**,
+> which re-decides with that critique injected. A `review_count` in the shared state,
+> capped by `MAX_REVIEW_ROUNDS` (default **1**), bounds the loop so it runs at most once
+> and can't ping-pong. That one counter is the whole difference between a genuine
+> generator-critic loop and a flat sequential pipeline.
 
-```python
-from xai import Grok
+The whole thing is a **LangGraph state graph**. The graph owns *all* routing,
+nodes never call each other directly. They're pure functions of
+`(state) → state`; the conditional edges decide where the invoice goes next.
 
-client = Grok(api_key="your_key")
-response = client.chat.completions.create(
-    model="grok-3",
-    messages=[{"role": "user", "content": "Reason about this..."}]
-)
-```
+### The five stages
 
-## Running the System
+1. **Extraction (Grok).** Format is detected from the file extension and parsed
+   (`pdfplumber` for PDFs, `pandas` for CSV, direct read for the rest). Grok then
+   returns a **Pydantic-validated** `InvoiceExtraction` object via
+   `with_structured_output`, the schema's field descriptions constrain the model
+   and reject malformed output. The invoice, its line items, and the first audit
+   row (`extracted`) are written to the DB.
 
-The system should be executable from the command line:
+2. **Validation (deterministic).** Produces *facts and flags, never decisions*:
+   - Duplicate invoice number → immediate reject (this is what makes payment idempotent)
+   - Unknown item / fuzzy-normalized match against the catalog
+   - Unit-price mismatch vs. master
+   - **Cumulative** stock & budget, sums already-approved spend/qty for that item
+     (grouped within the invoice too) so the *running total* is what's checked
+   - Line math, subtotal, and total arithmetic
+   - Missing / unknown merchant
+   - Sanity: negative quantities or amounts
+
+3. **VP approval (Grok, always runs).** A ReAct agent with three tools
+   (`get_merchant_details`, `get_item_details`, `get_invoice_history`). It
+   investigates, weighs the *combination* of flags, and returns a JSON
+   `{reasoning, decision}`. Under the $10K threshold it decides alone.
+
+4. **Management review (Grok, only > $10K).** A **critic**, not a second approver.
+   It re-examines the VP's reasoning with *more tools than the VP had*, including
+   two it exclusively owns: `get_audit_trail` (the full decision history) and
+   `get_spending_summary` (portfolio-level approved spend). This follows the
+   **CRITIC pattern**: a critique only adds value if it's grounded in signals the
+   generator couldn't see. It writes a structured critique and hands it back,
+   it never approves or rejects itself.
+
+5. **Payment (deterministic).** Fires only on a hard `approved` status. Calls
+   `mock_payment(vendor, amount)`, records the `payment_txn_id`, and sets status
+   to `paid`.
+
+### The critique loop
+
+For invoices over $10K, the graph runs **VP → Management → VP**. The VP makes an
+initial call; management critiques it using its extra tools; the critique is
+injected back into the VP's prompt (with a note that it was escalated for crossing
+the threshold) and the VP makes a **final, binding** decision. `MAX_REVIEW_ROUNDS`
+(default 1) caps the loop so it can't ping-pong.
+
+This is a true generator-critic reflection loop: the critic has *more* context, so
+the second VP pass is measurably better-grounded (it starts citing prior-spend and
+audit facts it had no way of knowing the first time).
+
+---
+
+## Data model
+
+Five tables in SQLite, two seeded master tables and three populated by the pipeline.
+
+- **`master_inventory`** - the catalog (item, unit price, annual budget, stock).
+- **`master_merchants`**, known vendors (rating, on-time history, notes).
+- **`transaction_invoices`** / **`transaction_invoice_items`**, what was extracted.
+- **`transaction_audit_logs`**, append-only, one row per state change
+  (`extracted → validated → … → paid`), each tagged with who acted and why.
+
+**Master tables (seeded):**
+
+| Table | Columns |
+|---|---|
+| `master_inventory` | `item_id` (PK), `item_name`, `unit_price`, `item_budget`, `stock_qty` |
+| `master_merchants` | `merchant_id` (PK), `merchant_name`, `rating`, `on_time_history`, `notes` |
+
+**Transaction tables (written by the pipeline):**
+
+| Table | Columns |
+|---|---|
+| `transaction_invoices` | `trn_id` (PK), `invoice_number`, `merchant_name`, `invoice_date`, `due_date`, `subtotal`, `tax`, `total`, `currency`, `source_file` |
+| `transaction_invoice_items` | `invoice_transaction_id` (PK), `trn_id` (FK), `item_name`, `quantity`, `unit_price`, `line_total` |
+| `transaction_audit_logs` | `audit_log_id` (PK), `trn_id` (FK), `status`, `review_note`, `reviewed_by`, `payment_txn_id`, `updated_at` |
+
+**A deliberate design signal:** known-bad actors (`Fraudster LLC`, `NoProd
+Industries`, empty-vendor invoices, `FakeItem`) are *intentionally absent* from the
+master tables. "Not in the catalog" *is* the risk signal, the system treats an
+unknown vendor or item as something to flag, exactly as a real AP team would.
+
+Full schema is the source of truth in [`db/models.py`](db/models.py); seed data in
+[`data/seed/`](data/seed/).
+
+---
+
+## Setup & run
 
 ```bash
-python main.py --invoice_path=data/invoices/invoice1.txt
+# 1. environment
+python -m venv invoice_agent_env && source invoice_agent_env/bin/activate
+pip install -r requirements.txt
+
+# 2. xAI key, create a .env file in the project root:
+#    XAI_API_KEY=your_key_here
+
+# 3. build + seed the database
+alembic upgrade head
+python migrations/seed.py
+
+# 4. run an invoice through the pipeline
+python main.py --invoice_path=data/invoices/invoice_1005.json
 ```
 
-Output should include structured logs and results.
+Output is structured logs, every tool call, every agent's reasoning, and the
+final decision, plus a complete audit trail in `transaction_audit_logs`.
 
-## Evaluation Criteria
+---
 
-- **Functionality** — Does the system work end-to-end?
-- **Code Quality** — Clean, testable, well-structured code with error handling and observability
-- **Agentic Sophistication** — LLM integration, multi-agent flow, tool use, self-correction loops
-- **Shipping Mindset** — Valuable MVP delivered under ambiguity; scope ruthlessly cut where needed
-- **Presentation** — Clear translation of technical decisions to business impact
-- **Above/Beyond** - Have you made it your own? Implemented additional features that make the solution feel great? Expanded assumptions? Added to test cases?
-- **UI/UX** - Users will understand and enjoy using this system.
+## UI/UX
+
+<!-- TODO: Streamlit dashboard. Walk through what the operator sees, invoice
+     intake, the live pipeline, flags, agent reasoning, the audit trail, and the
+     final decision. Add screenshots once built and tested. -->
+
+*A Streamlit dashboard is in progress, this section will cover what an AP
+operator sees end-to-end, with screenshots.*
+
+---
+
+## Assumptions & scope
+
+- **Local & offline.** No external APIs; payment is mocked. Matches the brief's
+  "assume no internet" constraint.
+- **Foreign currency is held, not guessed (deliberate choice).** The master catalog
+  is USD. A non-USD invoice (e.g. INV-1014 in EUR) can't be price- or budget-checked
+  against it without an FX rate, and converting with a stale offline rate would mean
+  paying a *guessed* amount — exactly what "money → deterministic, never guess" forbids.
+  So validation flags `foreign_currency`, skips only the two cross-currency checks
+  (everything else — line math, totals, stock — still runs), and the invoice ends in a
+  third terminal status, **`fx_review_hold`** — a "good but one thing unverified" outcome,
+  distinct from rejected. A deterministic guard ensures it can never be paid regardless of
+  what the model says. **If an external FX API were permitted**, the cleaner path is to
+  convert to USD *inside validation before the checks run* — then the price/budget checks
+  and approval flow work unchanged, with no separate hold needed.
+- **Budget = annual spend cap per item**, checked cumulatively against
+  already-approved invoices.
+- **Idempotency via duplicate detection.** A repeated invoice number is rejected at
+  validation, which is what prevents double payment.
+- **The threshold ($10K) and review-round cap are config**, not hard-coded,
+  changing AP policy is a one-line edit in [`config.py`](config.py).
+- **The model is swappable.** Grok lives behind [`llm.py`](llm.py); switching
+  providers is a single-file change.
+
+---
+
+## Design decisions worth calling out
+
+- **Graph owns routing, nodes stay pure.** Threshold checks, loop counters, and
+  escalation all live in the graph's edges, not buried inside node functions.
+  This keeps each stage independently testable and the control flow in one place.
+- **The critic is strictly a critic.** Management returns reasoning, never a
+  verdict. This removed a real ambiguity (does "approved" mean *I approve the
+  invoice* or *I approve the VP's logic?*) and keeps the VP as the single
+  decision-maker.
+- **The critic is given more than the generator.** Without that, a reflection loop
+  is just a model agreeing with itself.
+- **Deterministic core, narrow model surface.** The model touches three of five
+  stages and *never* the money, which is exactly the property you want auditors
+  and a CFO to be comfortable with.
+- **The VP runs even on a perfectly clean invoice.** Zero validation flags does not
+  mean auto-approve. The VP still checks that the merchant is real, well-rated, and has
+  no history of problems before clearing payment. A clean *invoice* from a bad *vendor*
+  is still a bad payment, and only the VP looks at the vendor.
+- **Stock and budget are checked cumulatively, across and within invoices.** Comparing
+  one invoice's quantity against master stock is not enough. Ten invoices can each be
+  under stock on their own yet blow past it together. So for every item we add up
+  (a) the quantity already **approved** on *other* invoices and (b) the quantity on the
+  **current** invoice, where the same item can appear on several line items, so we group
+  those lines and sum them first. The combined total is what gets checked against stock,
+  and the identical pattern is used for the annual budget. This catches both the
+  across-invoice and within-invoice ways a limit gets quietly exceeded.
