@@ -1,4 +1,6 @@
-# Invoice Processing Automation
+# AutoInvoice
+
+*Invoice Processing Automation*
 
 A multi-agent accounts-payable system for **Acme Corp**. It ingests messy invoices
 (PDF, JSON, CSV, XML, TXT), validates them against an inventory + vendor database,
