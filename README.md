@@ -73,7 +73,7 @@ streamlit run app.py                                 & REM or: python main.py --
 
 ### Demo
 
-[![Watch the demo](https://cdn.loom.com/sessions/thumbnails/7e9338f9e239450d988f343d6f4d4b40-with-play.gif)](https://www.loom.com/share/7e9338f9e239450d988f343d6f4d4b40)
+<video src="docs/Demo/demo.mp4" controls width="100%"></video>
 
 ### The starter page
 
