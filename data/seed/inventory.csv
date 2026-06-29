@@ -1,4 +1,6 @@
 item_id,item_name,unit_price,item_budget,stock_qty
-1,WidgetA,250.00,100000.00,150
-2,WidgetB,500.00,150000.00,100
-3,GadgetX,750.00,80000.00,100
+1,WidgetA,250.00,250000.00,250
+2,WidgetB,500.00,250000.00,200
+3,GadgetX,750.00,250000.00,200
+4,Forklift,300.00,100000.00,5
+5,SteelBeam,1500.00,4000.00,100

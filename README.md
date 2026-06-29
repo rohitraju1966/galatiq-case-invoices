@@ -166,7 +166,7 @@ flowchart TD
 > ping-pong. That one counter is the whole difference between a real generator-critic
 > loop and a flat pipeline.
 
-The whole system is a **LangGraph state graph**. The graph owns all routing; nodes
+The whole system is a **LangGraph state graph**. The graph owns all routing, nodes
 never call each other. They are pure functions of `(state) -> state`, and the
 conditional edges decide where each invoice goes next.
 
@@ -246,6 +246,32 @@ errors, foreign currency, duplicate rejection, and cumulative limits across invo
 These map one to one onto the scenarios in the brief.
 
 The code is linted and formatted with ruff (`make lint`, `make format`).
+
+### End-to-end pipeline results
+
+I ran 13 test invoices through the full pipeline locally, in sequence (order
+matters for duplicate and cumulative checks). Every case hit the expected terminal
+status.
+
+| # | Invoice | Case | Expected | Actual | Reason |
+|---|---------|------|----------|--------|--------|
+| 1 | 1001 | Clean approve <$10K | paid | paid | Clean invoice, all checks passed |
+| 2 | 1005 | Clean approve >$10K, no line totals | paid | paid | No line totals handled correctly |
+| 3 | 1004 | Clean approve <$10K (sets up dup) | paid | paid | Clean invoice, sets up duplicate test |
+| 4 | 1004_revised | Duplicate (same INV-1004) | rejected | rejected | Duplicate invoice number already approved |
+| 5 | 1014 | Foreign currency (EUR) | fx_review_hold | fx_review_hold | Held for FX review, no USD conversion available |
+| 6 | 1003 | Unknown vendor + unknown item | rejected | rejected | FakeItem not in catalog, vendor not in approved supplier list |
+| 7 | 1009 | Negative qty + missing vendor | rejected | rejected | Negative quantity, no supplier, negative price and total |
+| 8 | 1016 | Unknown item (WidgetC), good vendor | rejected | rejected | Unknown item rejected despite good vendor |
+| 9 | 1010 | Price mismatch + unrecognized item <$10K | rejected | rejected | Math error (subtotal+tax != total) and unrecognized item outweigh good vendor (4/5) |
+| 10 | 1013 | Price mismatch + math error >$10K + auditor | rejected | rejected | $50 arithmetic mismatch confirmed by auditor, volume discounts valid but math error cannot be overlooked |
+| 11 | 1017 | Stock exceeded (Forklift x12, stock 5) | rejected | rejected | Order exceeds stock by wide margin (12 vs 5) despite excellent vendor (5/5) |
+| 12 | 1018 | Budget exceeded (SteelBeam $7.5K > $4K) | rejected | rejected | $7,500 purchase exceeds $4,000 item budget, no justification to override |
+| 13 | 1019 | All 3 math errors (line + subtotal + total) | rejected | rejected | Incorrect line total, subtotal mismatch, and total doesn't reconcile with subtotal+tax |
+
+**13/13 correct outcomes.** The three clean invoices run first to build realistic
+approved history for the cumulative stock and budget checks that follow. The two
+judgment cases (1010, 1013) have no single right answer (more prone towards rejection to avoide false positives)
 
 ---
 

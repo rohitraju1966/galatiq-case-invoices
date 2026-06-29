@@ -1,0 +1,18 @@
+{
+  "invoice_number": "INV-1018",
+  "vendor": {
+    "name": "Steelworks Direct",
+    "address": "750 Forge Lane, Pittsburgh, PA 15201"
+  },
+  "date": "2026-01-31",
+  "due_date": "2026-03-01",
+  "line_items": [
+    {"item": "SteelBeam", "quantity": 5, "unit_price": 1500.00, "amount": 7500.00}
+  ],
+  "subtotal": 7500.00,
+  "tax_rate": 0.0,
+  "tax_amount": 0.00,
+  "total": 7500.00,
+  "currency": "USD",
+  "payment_terms": "Net 30"
+}
