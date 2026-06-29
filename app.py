@@ -56,14 +56,14 @@ def _clear_result() -> None:
 def _resolve_path(key_prefix: str) -> Path | None:
     samples = sorted(p.name for p in SAMPLE_DIR.glob("*") if p.suffix.lower().lstrip(".") in SUPPORTED)
     choice = st.selectbox(
-        "Pick a sample invoice",
+        "Pick an invoice",
         samples,
         index=0,
         key=f"{key_prefix}_choice",
         on_change=_clear_result,
     )
     uploaded = st.file_uploader(
-        "OR upload your own", type=list(SUPPORTED), key=f"{key_prefix}_upload", on_change=_clear_result
+        "OR upload", type=list(SUPPORTED), key=f"{key_prefix}_upload", on_change=_clear_result
     )
     if uploaded is not None:
         suffix = Path(uploaded.name).suffix
