@@ -48,13 +48,15 @@ def load_dashboard(db: InvoiceDB) -> DashboardData:
 
     for invoice in invoices:
         status = _final_status(db, int(invoice.trn_id))
-        label, tone = _OUTCOME.get(status, (status.replace("_", " ").capitalize(), "neutral"))
+        label, tone = _OUTCOME.get(
+            status, (status.replace("_", " ").capitalize(), "neutral")
+        )
         data.outcomes[label] = data.outcomes.get(label, 0) + 1
 
         if status in ("paid", "approved"):
             approved_count += 1
         if status == "paid" and invoice.total is not None:
-            data.total_paid += float(invoice.total) 
+            data.total_paid += float(invoice.total)
         if status in ("fx_review_hold", "auditor_review", "rejected"):
             data.needs_attention += 1
 
@@ -62,8 +64,10 @@ def load_dashboard(db: InvoiceDB) -> DashboardData:
             data.recent.append(
                 RecentRow(
                     invoice_number=str(invoice.invoice_number),
-                    merchant=str(invoice.merchant_name) if invoice.merchant_name else "Unknown supplier",
-                    total=invoice.total, 
+                    merchant=str(invoice.merchant_name)
+                    if invoice.merchant_name
+                    else "Unknown supplier",
+                    total=invoice.total,
                     status_label=label,
                     tone=tone,
                 )

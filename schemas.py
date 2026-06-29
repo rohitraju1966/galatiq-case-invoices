@@ -1,10 +1,12 @@
 from pydantic import BaseModel, Field
 
+
 class LineItem(BaseModel):
     item_name: str = Field(description="Product name as written on invoice")
     quantity: int = Field(description="Number of units ordered")
     unit_price: float = Field(description="Price per unit")
     line_total: float = Field(description="quantity * unit_price")
+
 
 class InvoiceExtraction(BaseModel):
     invoice_number: str = Field(description="Invoice ID or number")

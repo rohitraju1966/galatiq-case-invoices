@@ -23,7 +23,13 @@ def process_payment(state: InvoiceState) -> dict:
     result = mock_payment(merchant, amount)
     logger.info(f"Payment {amount} to {merchant}")
 
-    db.log_audit(state["trn_id"], "paid", f"Payment to {merchant}: ${amount}", "payment", payment_txn_id=result["payment_txn_id"])
+    db.log_audit(
+        state["trn_id"],
+        "paid",
+        f"Payment to {merchant}: ${amount}",
+        "payment",
+        payment_txn_id=result["payment_txn_id"],
+    )
 
     return {
         "status": "paid",

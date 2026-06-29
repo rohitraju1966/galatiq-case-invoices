@@ -8,23 +8,27 @@ from agents.tools.db import InvoiceDB
 from agents.prompts.vp import VP_PROMPT, VP_CRITIQUE_SECTION
 from config import APPROVAL_THRESHOLD
 from llm import llm
-from agents.tools.vp import get_merchant_details, get_item_details, get_invoice_history
+from agents.tools.vp import make_vp_tools
 from agents.tools.utils import parse_decision
 
 logger = logging.getLogger(__name__)
 
-vp_tools = [get_merchant_details, get_item_details, get_invoice_history]
 
 def run_vp(state: InvoiceState, critique_section: str = "") -> str:
     prompt = VP_PROMPT.format(
         critique_section=critique_section,
         invoice_data=json.dumps(state["invoice_data"], indent=2),
-        validation_flags="\n".join(state["validation_flags"]) if state["validation_flags"] else "No flags — all checks passed",
+        validation_flags="\n".join(state["validation_flags"])
+        if state["validation_flags"]
+        else "No flags — all checks passed",
     )
-    agent = create_react_agent(llm, vp_tools, prompt=prompt)
-    
+    agent = create_react_agent(llm, make_vp_tools(state["trn_id"]), prompt=prompt)
+
     final_response = ""
-    for step in agent.stream({"messages": [("human", "Review this invoice.")]}, config={"recursion_limit": 10}):
+    for step in agent.stream(
+        {"messages": [("human", "Review this invoice.")]},
+        config={"recursion_limit": 5},
+    ):
         for node, output in step.items():
             if node == "tools":
                 for msg in output["messages"]:
@@ -34,10 +38,13 @@ def run_vp(state: InvoiceState, critique_section: str = "") -> str:
                 if content:
                     logger.info(f"VP reasoning: {content}")
                     final_response = content
-    
+
     return final_response
 
+
 db = InvoiceDB()
+
+
 def vp_review(state: InvoiceState) -> dict:
     critique_section = ""
     if state.get("status") == "vp_review_required":
@@ -50,9 +57,11 @@ def vp_review(state: InvoiceState) -> dict:
     raw_response = run_vp(state, critique_section=critique_section)
     decision, reasoning = parse_decision(raw_response)
     logger.info(f"VP decision: {decision}, reasoning: {reasoning}")
-    
+
     # Check if it's approved and had a foreign_currency flag, if it does exist then update the decision and reasoning to make sure no foreign currency invoices slipped through the agent
-    if decision == "approved" and any(f.startswith("foreign_currency") for f in state.get("validation_flags", [])):
+    if decision == "approved" and any(
+        f.startswith("foreign_currency") for f in state.get("validation_flags", [])
+    ):
         decision = "fx_review_hold"
         reasoning = f"[Auto-held: foreign currency requires manual FX verification before payment] {reasoning}"
         logger.info("Foreign-currency invoice coerced to fx_review_hold")

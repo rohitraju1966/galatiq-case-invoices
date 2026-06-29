@@ -27,7 +27,9 @@ def _state(
     subtotal: float | None = None,
     total: float | None = None,
 ) -> dict:
-    sub = subtotal if subtotal is not None else sum(li["line_total"] for li in line_items)
+    sub = (
+        subtotal if subtotal is not None else sum(li["line_total"] for li in line_items)
+    )
     tot = total if total is not None else sub + tax
     return {
         "invoice_data": {
@@ -58,7 +60,10 @@ def _approve_prior(invoice_number: str, items: list[tuple[str, int, float]]) -> 
         tax=0.0,
         total=sum(q * p for _, q, p in items),
         currency="USD",
-        line_items=[LineItem(item_name=n, quantity=q, unit_price=p, line_total=q * p) for n, q, p in items],
+        line_items=[
+            LineItem(item_name=n, quantity=q, unit_price=p, line_total=q * p)
+            for n, q, p in items
+        ],
     )
     trn_id = db.insert_invoice(data, "test")
     db.insert_line_items(trn_id, data)
@@ -88,7 +93,9 @@ def test_validate_invoice_flags_negative_quantity(seeded_db):
 
 
 def test_validate_invoice_flags_unknown_merchant(seeded_db):
-    result = validate_invoice(_state([_line("WidgetA", 1, 250.0)], merchant="Fraudster LLC"))
+    result = validate_invoice(
+        _state([_line("WidgetA", 1, 250.0)], merchant="Fraudster LLC")
+    )
     assert "unknown_merchant" in _flag_prefixes(result)
 
 
@@ -104,12 +111,16 @@ def test_validate_invoice_flags_foreign_currency(seeded_db):
 
 def test_validate_invoice_rejects_duplicate_after_approval(seeded_db):
     _approve_prior("INV-DUP", [("WidgetA", 1, 250.0)])
-    result = validate_invoice(_state([_line("WidgetA", 1, 250.0)], invoice_number="INV-DUP", trn_id=999))
+    result = validate_invoice(
+        _state([_line("WidgetA", 1, 250.0)], invoice_number="INV-DUP", trn_id=999)
+    )
     assert result["status"] == "rejected"
     assert "duplicate_invoice" in result["validation_flags"]
 
 
 def test_validate_invoice_stock_is_cumulative_across_invoices(seeded_db):
     _approve_prior("INV-PRIOR", [("WidgetA", 10, 250.0)])
-    result = validate_invoice(_state([_line("WidgetA", 8, 250.0)], invoice_number="INV-NEW", trn_id=999))
+    result = validate_invoice(
+        _state([_line("WidgetA", 8, 250.0)], invoice_number="INV-NEW", trn_id=999)
+    )
     assert "stock_exceeded" in _flag_prefixes(result)

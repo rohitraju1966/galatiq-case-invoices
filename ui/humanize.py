@@ -13,13 +13,13 @@ from typing import Callable
 class FriendlyFlag:
     title: str
     detail: str
-    severity: str  
+    severity: str
 
 
 @dataclass
 class StatusBadge:
     label: str
-    tone: str  
+    tone: str
 
 
 def _money(val: float) -> str:
@@ -58,8 +58,14 @@ def _price_mismatch(rest: str) -> FriendlyFlag:
 def _stock_exceeded(rest: str) -> FriendlyFlag:
     item = _item_name(rest)
     kv = _kv(rest)
-    approved, invoice, stock = _num(kv.get("approved", "0")), _num(kv.get("invoice", "0")), _num(kv.get("stock", "0"))
-    already = f" on top of {int(approved)} already approved this year" if approved else ""
+    approved, invoice, stock = (
+        _num(kv.get("approved", "0")),
+        _num(kv.get("invoice", "0")),
+        _num(kv.get("stock", "0")),
+    )
+    already = (
+        f" on top of {int(approved)} already approved this year" if approved else ""
+    )
     return FriendlyFlag(
         "Order larger than available stock",
         f"{item}: this invoice orders {int(invoice)} unit(s){already}, but only {int(stock)} are in stock.",
@@ -70,7 +76,11 @@ def _stock_exceeded(rest: str) -> FriendlyFlag:
 def _budget_exceeded(rest: str) -> FriendlyFlag:
     item = _item_name(rest)
     kv = _kv(rest)
-    approved, invoice, budget = _num(kv.get("approved", "0")), _num(kv.get("invoice", "0")), _num(kv.get("budget", "0"))
+    approved, invoice, budget = (
+        _num(kv.get("approved", "0")),
+        _num(kv.get("invoice", "0")),
+        _num(kv.get("budget", "0")),
+    )
     already = f" plus {_money(approved)} already approved" if approved else ""
     return FriendlyFlag(
         "Exceeds remaining budget",
@@ -135,7 +145,9 @@ def _normalized_match(rest: str) -> FriendlyFlag:
 
 
 def _negative_value(rest: str) -> FriendlyFlag:
-    return FriendlyFlag("Invalid amount", f"{rest}: contains a negative quantity or price.", "danger")
+    return FriendlyFlag(
+        "Invalid amount", f"{rest}: contains a negative quantity or price.", "danger"
+    )
 
 
 def _foreign_currency(rest: str) -> FriendlyFlag:
@@ -148,11 +160,15 @@ def _foreign_currency(rest: str) -> FriendlyFlag:
 
 
 def _missing_merchant(_rest: str) -> FriendlyFlag:
-    return FriendlyFlag("No supplier name", "The invoice doesn't list a supplier.", "danger")
+    return FriendlyFlag(
+        "No supplier name", "The invoice doesn't list a supplier.", "danger"
+    )
 
 
 def _negative_total(_rest: str) -> FriendlyFlag:
-    return FriendlyFlag("Invalid total", "The invoice total is a negative amount.", "danger")
+    return FriendlyFlag(
+        "Invalid total", "The invoice total is a negative amount.", "danger"
+    )
 
 
 def _duplicate(_rest: str) -> FriendlyFlag:
@@ -192,7 +208,9 @@ def humanize_flag(flag: str) -> FriendlyFlag:
 def parse_flags(review_note: str) -> list[FriendlyFlag]:
     if not review_note or review_note.strip() == "All checks passed":
         return []
-    return [humanize_flag(part.strip()) for part in review_note.split(" | ") if part.strip()]
+    return [
+        humanize_flag(part.strip()) for part in review_note.split(" | ") if part.strip()
+    ]
 
 
 _REVIEWER_NAMES: dict[str, str] = {
@@ -223,5 +241,7 @@ _STATUS_BADGES: dict[str, tuple[str, str]] = {
 
 
 def status_badge(status: str) -> StatusBadge:
-    label, tone = _STATUS_BADGES.get(status, (status.replace("_", " ").capitalize(), "neutral"))
+    label, tone = _STATUS_BADGES.get(
+        status, (status.replace("_", " ").capitalize(), "neutral")
+    )
     return StatusBadge(label, tone)

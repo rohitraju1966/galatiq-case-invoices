@@ -6,7 +6,9 @@ PIP := $(VENV)/bin/pip
 ALEMBIC := $(VENV)/bin/alembic
 INVOICE ?= data/invoices/invoice_1013.pdf
 
-.PHONY: help setup venv install seed run cli test clean
+RUFF := $(VENV)/bin/ruff
+
+.PHONY: help setup venv install seed run cli test lint format clean
 
 help:
 	@echo "PayPilot — make targets:"
@@ -16,6 +18,8 @@ help:
 	@echo "  make run      Launch the Streamlit app"
 	@echo "  make cli      Process one invoice (INVOICE=data/invoices/<file>)"
 	@echo "  make test     Run the unit tests"
+	@echo "  make lint     Lint with ruff"
+	@echo "  make format   Format the code with ruff"
 	@echo "  make clean    Delete the local database"
 
 setup: venv install seed
@@ -40,6 +44,12 @@ cli:
 
 test:
 	$(PY) -m pytest -q
+
+lint:
+	$(RUFF) check .
+
+format:
+	$(RUFF) format .
 
 clean:
 	rm -f data/acme.db

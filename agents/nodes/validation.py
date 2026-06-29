@@ -6,6 +6,7 @@ from agents.tools.db import InvoiceDB
 
 logger = logging.getLogger(__name__)
 
+
 def validate_invoice(state: InvoiceState) -> dict:
     db = InvoiceDB()
     data = state["invoice_data"]
@@ -19,7 +20,9 @@ def validate_invoice(state: InvoiceState) -> dict:
     # Currency convertion would require an API and as external API should not be used, flagging currencies other than USD and setting status as pending for approval along with VP reasoning
     is_foreign = (data.get("currency") or "USD") != "USD"
     if is_foreign:
-        flags.append(f"foreign_currency: {data['currency']} (price/budget not verified against USD catalog)")
+        flags.append(
+            f"foreign_currency: {data['currency']} (price/budget not verified against USD catalog)"
+        )
 
     for item in state["line_items"]:
         master, was_normalized = db.get_item(item["item_name"])
@@ -32,7 +35,9 @@ def validate_invoice(state: InvoiceState) -> dict:
             flags.append(f"normalized_match: {item['item_name']} -> {master.item_name}")
 
         if not is_foreign and item["unit_price"] != master.unit_price:
-            flags.append(f"price_mismatch: {item['item_name']} (invoice={item['unit_price']}, master={master.unit_price})")
+            flags.append(
+                f"price_mismatch: {item['item_name']} (invoice={item['unit_price']}, master={master.unit_price})"
+            )
 
     # To make sure that we account for all the approved invoices and also to group all the similar items in the same invoice, we find total approved quantity and budge and group by for the invoice and find the total (sum of the two shoul be less than master inventory values)
     item_totals: dict[str, dict] = defaultdict(lambda: {"qty": 0, "spend": 0.0})
@@ -48,25 +53,37 @@ def validate_invoice(state: InvoiceState) -> dict:
         approved = db.get_approved_totals(master.item_name, trn_id)
 
         if approved["qty"] + totals["qty"] > master.stock_qty:
-            flags.append(f"stock_exceeded: {item_name} (approved={approved['qty']}, invoice={totals['qty']}, stock={master.stock_qty})")
+            flags.append(
+                f"stock_exceeded: {item_name} (approved={approved['qty']}, invoice={totals['qty']}, stock={master.stock_qty})"
+            )
 
         if not is_foreign and approved["spend"] + totals["spend"] > master.item_budget:
-            flags.append(f"budget_exceeded: {item_name} (approved={approved['spend']}, invoice={totals['spend']}, budget={master.item_budget})")
+            flags.append(
+                f"budget_exceeded: {item_name} (approved={approved['spend']}, invoice={totals['spend']}, budget={master.item_budget})"
+            )
 
     # Math checks
     for item in state["line_items"]:
         expected = item["quantity"] * item["unit_price"]
         if abs(expected - item["line_total"]) > 0.01:
-            flags.append(f"line_math_error: {item['item_name']} ({item['quantity']} x {item['unit_price']} != {item['line_total']})")
-    
-    line_total_sum = sum(item["quantity"] * item["unit_price"] for item in state["line_items"])
+            flags.append(
+                f"line_math_error: {item['item_name']} ({item['quantity']} x {item['unit_price']} != {item['line_total']})"
+            )
+
+    line_total_sum = sum(
+        item["quantity"] * item["unit_price"] for item in state["line_items"]
+    )
     if data["subtotal"] and abs(line_total_sum - data["subtotal"]) > 0.01:
-        flags.append(f"subtotal_mismatch: (sum={line_total_sum}, subtotal={data['subtotal']})")
+        flags.append(
+            f"subtotal_mismatch: (sum={line_total_sum}, subtotal={data['subtotal']})"
+        )
 
     if data["subtotal"] and data["tax"] is not None and data["total"]:
         expected_total = data["subtotal"] + data["tax"]
         if abs(expected_total - data["total"]) > 0.01:
-            flags.append(f"total_mismatch: (subtotal+tax={expected_total}, total={data['total']})")
+            flags.append(
+                f"total_mismatch: (subtotal+tax={expected_total}, total={data['total']})"
+            )
 
     # Merchant check
     if not data["merchant_name"]:

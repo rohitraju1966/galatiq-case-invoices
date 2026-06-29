@@ -35,7 +35,13 @@ _STAGE_LABEL = {
     "auditor": "Senior review",
     "payment": "Payment",
 }
-_OUTCOME_TONE = {"Paid": "success", "Approved": "success", "Rejected": "danger", "Held": "warning", "In review": "accent"}
+_OUTCOME_TONE = {
+    "Paid": "success",
+    "Approved": "success",
+    "Rejected": "danger",
+    "Held": "warning",
+    "In review": "accent",
+}
 _VERDICT = {
     "paid": ("Paid", "success"),
     "approved": ("Approved", "success"),
@@ -54,7 +60,11 @@ def _clear_result() -> None:
 
 
 def _resolve_path(key_prefix: str) -> Path | None:
-    samples = sorted(p.name for p in SAMPLE_DIR.glob("*") if p.suffix.lower().lstrip(".") in SUPPORTED)
+    samples = sorted(
+        p.name
+        for p in SAMPLE_DIR.glob("*")
+        if p.suffix.lower().lstrip(".") in SUPPORTED
+    )
     choice = st.selectbox(
         "Pick an invoice",
         samples,
@@ -63,7 +73,10 @@ def _resolve_path(key_prefix: str) -> Path | None:
         on_change=_clear_result,
     )
     uploaded = st.file_uploader(
-        "OR upload", type=list(SUPPORTED), key=f"{key_prefix}_upload", on_change=_clear_result
+        "OR upload",
+        type=list(SUPPORTED),
+        key=f"{key_prefix}_upload",
+        on_change=_clear_result,
     )
     if uploaded is not None:
         suffix = Path(uploaded.name).suffix
@@ -80,7 +93,7 @@ def _run_pipeline(path: Path) -> int | None:
     trn_id: int | None = None
     seen: list[str] = []
     placeholder = st.empty()
-    placeholder.markdown(live_stepper_html(seen), unsafe_allow_html=True)  
+    placeholder.markdown(live_stepper_html(seen), unsafe_allow_html=True)
     try:
         for chunk in graph.stream({"invoice_path": str(path)}, stream_mode="updates"):
             for node, update in chunk.items():
@@ -89,9 +102,11 @@ def _run_pipeline(path: Path) -> int | None:
                 label = _STAGE_LABEL.get(node)
                 if label:
                     seen.append(label)
-                    placeholder.markdown(live_stepper_html(seen), unsafe_allow_html=True)
+                    placeholder.markdown(
+                        live_stepper_html(seen), unsafe_allow_html=True
+                    )
         placeholder.empty()
-    except Exception as exc:  
+    except Exception as exc:
         placeholder.empty()
         st.error(f"We couldn't process this invoice: {exc}")
     return trn_id
@@ -114,7 +129,12 @@ def _show_extracted(db: InvoiceDB, trn_id: int) -> None:
         }
     )
     items = [
-        {"Item": i.item_name, "Qty": i.quantity, "Unit price": i.unit_price, "Line total": i.line_total}
+        {
+            "Item": i.item_name,
+            "Qty": i.quantity,
+            "Unit price": i.unit_price,
+            "Line total": i.line_total,
+        }
         for i in db.get_items(trn_id)
     ]
     if items:
@@ -169,7 +189,9 @@ if started:
         brand_header()
         st.divider()
         path = _resolve_path("side")
-        go = st.button("Process", type="primary", disabled=path is None, width="stretch")
+        go = st.button(
+            "Process", type="primary", disabled=path is None, width="stretch"
+        )
 
 process_tab, dashboard_tab = st.tabs(["Process invoice", "Dashboard"])
 
@@ -202,7 +224,9 @@ with process_tab:
                     _render_result(InvoiceDB(), int(last))
             elif pending is None:
                 with slot.container():
-                    st.info("Pick or upload an invoice in the sidebar, then press Process.")
+                    st.info(
+                        "Pick or upload an invoice in the sidebar, then press Process."
+                    )
 
 with dashboard_tab:
     _render_dashboard()

@@ -24,10 +24,27 @@ def seeded_db(tmp_path, monkeypatch):
     session = sessionmaker(bind=engine)()
     session.add_all(
         [
-            MasterInventory(item_name="WidgetA", unit_price=250.0, item_budget=10_000.0, stock_qty=15),
-            MasterInventory(item_name="WidgetB", unit_price=500.0, item_budget=15_000.0, stock_qty=10),
-            MasterInventory(item_name="GadgetX", unit_price=750.0, item_budget=8_000.0, stock_qty=5),
-            MasterMerchant(merchant_name="Atlas Industrial Supply", rating=4, on_time_history="reliable", notes=""),
+            MasterInventory(
+                item_name="WidgetA",
+                unit_price=250.0,
+                item_budget=10_000.0,
+                stock_qty=15,
+            ),
+            MasterInventory(
+                item_name="WidgetB",
+                unit_price=500.0,
+                item_budget=15_000.0,
+                stock_qty=10,
+            ),
+            MasterInventory(
+                item_name="GadgetX", unit_price=750.0, item_budget=8_000.0, stock_qty=5
+            ),
+            MasterMerchant(
+                merchant_name="Atlas Industrial Supply",
+                rating=4,
+                on_time_history="reliable",
+                notes="",
+            ),
         ]
     )
     session.commit()

@@ -33,6 +33,8 @@ everything:
 | `make cli INVOICE=data/invoices/invoice_1005.json` | Process one invoice from the command line |
 | `make seed` | Wipe and rebuild the database (inventory + merchants) |
 | `make test` | Run the unit tests |
+| `make lint` | Lint with ruff |
+| `make format` | Format the code with ruff |
 | `make clean` | Delete the local database |
 
 The CLI path (`make cli`) prints structured logs (every tool call, each agent's
@@ -88,6 +90,11 @@ resolves into:
   Auditor, Payment), a plain-language note, and any flags. The VP, Auditor, VP
   critique loop renders as the auditor's review indented under the VP, so the
   reflection loop is something you can see.
+
+Example of an effective Critique review:
+
+![pipeline](docs/screenshots/critique.png)
+
 
 ### The dashboard
 
@@ -229,6 +236,8 @@ money-critical logic and is pure, so the suite in [`tests/`](tests/) covers it
 directly: clean invoices, stock and budget overruns, unknown item and vendor, math
 errors, foreign currency, duplicate rejection, and cumulative limits across invoices.
 These map one to one onto the scenarios in the brief.
+
+The code is linted and formatted with ruff (`make lint`, `make format`).
 
 ---
 

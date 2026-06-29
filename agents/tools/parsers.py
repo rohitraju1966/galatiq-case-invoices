@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 import pdfplumber
 
+
 def parse_invoice(invoice_path: str) -> str:
     file_path = Path(invoice_path)
     file_ext = file_path.suffix.lower()
@@ -22,4 +23,3 @@ def parse_invoice(invoice_path: str) -> str:
                 return "\n".join(page.extract_text() or "" for page in pdf.pages)
     except (OSError, ValueError, pd.errors.ParserError) as e:
         raise ValueError(f"Failed to parse invoice {file_path}: {e}") from e
-    

@@ -16,8 +16,17 @@ _TONE: dict[str, tuple[str, str]] = {
     "accent": ("#EEEDFE", "#534AB7"),
     "neutral": ("#F1EFE8", "#5F5E5A"),
 }
-_SOLID: dict[str, str] = {"success": "#1D9E75", "danger": "#E24B4A", "warning": "#EF9F27", "accent": "#7F77DD"}
-_SEVERITY_TONE: dict[str, str] = {"danger": "danger", "warning": "warning", "info": "accent"}
+_SOLID: dict[str, str] = {
+    "success": "#1D9E75",
+    "danger": "#E24B4A",
+    "warning": "#EF9F27",
+    "accent": "#7F77DD",
+}
+_SEVERITY_TONE: dict[str, str] = {
+    "danger": "danger",
+    "warning": "warning",
+    "info": "accent",
+}
 _STEP_ICON: dict[str, str] = {
     "extraction": "📄",
     "validation": "✓",
@@ -133,7 +142,9 @@ def inject_theme() -> None:
 
 def _badge_html(badge: StatusBadge) -> str:
     bg, fg = _TONE.get(badge.tone, _TONE["neutral"])
-    return f'<span class="badge" style="background:{bg};color:{fg}">{badge.label}</span>'
+    return (
+        f'<span class="badge" style="background:{bg};color:{fg}">{badge.label}</span>'
+    )
 
 
 def pill(label: str, tone: str) -> str:
@@ -149,7 +160,11 @@ def _flag_html(flag: FriendlyFlag) -> str:
     )
 
 
-def invoice_header(summary: InvoiceSummary, verdict_label: str | None = None, verdict_tone: str = "neutral") -> None:
+def invoice_header(
+    summary: InvoiceSummary,
+    verdict_label: str | None = None,
+    verdict_tone: str = "neutral",
+) -> None:
     total = f"${summary.total:,.0f}" if summary.total is not None else "—"
     verdict_fact = ""
     if verdict_label:
@@ -212,11 +227,16 @@ def outcomes_bar(outcomes: dict[str, int], tone_by_label: dict[str, str]) -> Non
         f'background:{_SOLID.get(tone_by_label.get(label, "neutral"), "#888")};margin-right:6px"></span>{label} {count}</span>'
         for label, count in outcomes.items()
     )
-    st.markdown(f'<div class="otc-bar">{segments}</div><div class="otc-legend">{legend}</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="otc-bar">{segments}</div><div class="otc-legend">{legend}</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def live_stepper_html(done_labels: list[str], finished: bool = False) -> str:
-    chips = [f'<span class="live-chip done">{label}&nbsp;✓</span>' for label in done_labels]
+    chips = [
+        f'<span class="live-chip done">{label}&nbsp;✓</span>' for label in done_labels
+    ]
     if not finished:
         chips.append('<span class="live-chip active">working…</span>')
     row = '<span class="live-arrow">→</span>'.join(chips)
@@ -232,4 +252,7 @@ def recent_table(rows: list[RecentRow]) -> None:
         f"<td>{pill(r.status_label, r.tone)}</td></tr>"
         for r in rows
     )
-    st.markdown(f'<table class="rtable"><thead>{head}</thead><tbody>{body}</tbody></table>', unsafe_allow_html=True)
+    st.markdown(
+        f'<table class="rtable"><thead>{head}</thead><tbody>{body}</tbody></table>',
+        unsafe_allow_html=True,
+    )

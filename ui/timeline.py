@@ -16,13 +16,13 @@ from ui.humanize import (
 
 @dataclass
 class TimelineStep:
-    key: str 
+    key: str
     title: str
     reviewer: str
     note: str
     badge: StatusBadge | None = None
     flags: list[FriendlyFlag] = field(default_factory=list)
-    nested: bool = False  
+    nested: bool = False
 
 
 @dataclass
@@ -41,7 +41,7 @@ class InvoiceSummary:
 class Timeline:
     summary: InvoiceSummary | None
     steps: list[TimelineStep]
-    final_status: str  
+    final_status: str
 
 
 _STAGE_TITLES = {
@@ -76,8 +76,16 @@ def _validation_step(status: str, note: str, reviewed_by: str) -> TimelineStep:
     if not flags:
         summary = "We ran our standard checks and everything looks right."
     else:
-        summary = f"We ran our standard checks and found {len(flags)} thing(s) worth a look."
-    return TimelineStep("validation", _STAGE_TITLES["validation"], reviewer_name(reviewed_by), summary, flags=flags)
+        summary = (
+            f"We ran our standard checks and found {len(flags)} thing(s) worth a look."
+        )
+    return TimelineStep(
+        "validation",
+        _STAGE_TITLES["validation"],
+        reviewer_name(reviewed_by),
+        summary,
+        flags=flags,
+    )
 
 
 def _escalation_step() -> TimelineStep:
@@ -127,8 +135,10 @@ def _build_summary(db: InvoiceDB, trn_id: int) -> InvoiceSummary | None:
     return InvoiceSummary(
         trn_id=trn_id,
         invoice_number=str(invoice.invoice_number),
-        merchant_name=str(invoice.merchant_name) if invoice.merchant_name else "Unknown supplier",
-        total=invoice.total,  
+        merchant_name=str(invoice.merchant_name)
+        if invoice.merchant_name
+        else "Unknown supplier",
+        total=invoice.total,
         currency=str(invoice.currency) if invoice.currency else "USD",
         due_date=str(invoice.due_date) if invoice.due_date else "—",
         source_file=str(invoice.source_file) if invoice.source_file else "",
@@ -160,7 +170,9 @@ def build_timeline(db: InvoiceDB, trn_id: int) -> Timeline:
             steps.append(_auditor_step(note, reviewed_by))
         elif reviewed_by == "vp_agent":
             vp_seen += 1
-            steps.append(_vp_step(status, note, reviewed_by, is_final=(vp_seen == vp_total)))
+            steps.append(
+                _vp_step(status, note, reviewed_by, is_final=(vp_seen == vp_total))
+            )
         elif reviewed_by == "payment":
             steps.append(_payment_step(note, reviewed_by))
 

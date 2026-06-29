@@ -23,9 +23,9 @@ def make_auditor_tools(trn_id: int) -> list:
 
     @tool
     def get_invoice_history(merchant_name: str) -> str:
-        """Get past invoices from this merchant."""
+        """Get past invoices from this merchant (excludes the invoice under review)."""
         db = InvoiceDB()
-        invoices = db.get_invoice_history(merchant_name)
+        invoices = db.get_invoice_history(merchant_name, trn_id)
         if not invoices:
             return "No prior invoices from this merchant."
         return f"{len(invoices)} prior invoices from {merchant_name}"
@@ -37,7 +37,9 @@ def make_auditor_tools(trn_id: int) -> list:
         logs = db.get_audit_trail(trn_id)
         if not logs:
             return "No audit trail found."
-        lines = [f"[{log.status}] by {log.reviewed_by}: {log.review_note}" for log in logs]
+        lines = [
+            f"[{log.status}] by {log.reviewed_by}: {log.review_note}" for log in logs
+        ]
         return "\n".join(lines)
 
     @tool
@@ -47,4 +49,10 @@ def make_auditor_tools(trn_id: int) -> list:
         totals = db.get_approved_totals(item_name, trn_id)
         return f"Approved so far: {totals['qty']} units, ${totals['spend']} spent"
 
-    return [get_merchant_details, get_item_details, get_invoice_history, get_audit_trail, get_spending_summary]
+    return [
+        get_merchant_details,
+        get_item_details,
+        get_invoice_history,
+        get_audit_trail,
+        get_spending_summary,
+    ]

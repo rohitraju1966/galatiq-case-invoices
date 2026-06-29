@@ -18,14 +18,19 @@ def auditor_review(state: InvoiceState) -> dict:
 
     prompt = AUDITOR_CRITIQUE_PROMPT.format(
         invoice_data=json.dumps(state["invoice_data"], indent=2),
-        validation_flags="\n".join(state["validation_flags"]) if state["validation_flags"] else "No flags",
+        validation_flags="\n".join(state["validation_flags"])
+        if state["validation_flags"]
+        else "No flags",
         vp_reasoning=state["review_note"],
     )
 
     agent = create_react_agent(llm, auditor_tools, prompt=prompt)
 
     critique = ""
-    for step in agent.stream({"messages": [("human", "Review the VP's decision.")]}, config={"recursion_limit": 10}):
+    for step in agent.stream(
+        {"messages": [("human", "Review the VP's decision.")]},
+        config={"recursion_limit": 10},
+    ):
         for node, output in step.items():
             if node == "tools":
                 for msg in output["messages"]:
@@ -37,7 +42,7 @@ def auditor_review(state: InvoiceState) -> dict:
                     critique = content
 
     db.log_audit(state["trn_id"], "auditor_reviewed", critique, "auditor_agent")
-    logger.info(f"Auditor critique complete, sending back to VP")
+    logger.info("Auditor critique complete, sending back to VP")
 
     return {
         "status": "vp_review_required",
