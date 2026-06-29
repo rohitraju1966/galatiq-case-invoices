@@ -1,4 +1,4 @@
 item_id,item_name,unit_price,item_budget,stock_qty
-1,WidgetA,250.00,10000.00,15
-2,WidgetB,500.00,15000.00,10
-3,GadgetX,750.00,8000.00,5
+1,WidgetA,250.00,10000.00,150
+2,WidgetB,500.00,15000.00,100
+3,GadgetX,750.00,8000.00,100
