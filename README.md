@@ -44,6 +44,8 @@ reasoning, and the final decision) alongside the full audit trail in
 <details>
 <summary>No <code>make</code>? The manual steps</summary>
 
+**macOS / Linux**
+
 ```bash
 python -m venv invoice_agent_env && source invoice_agent_env/bin/activate
 pip install -r requirements.txt
@@ -51,6 +53,18 @@ alembic upgrade head && python migrations/seed.py    # build + seed the database
 echo XAI_API_KEY=your_key_here > .env
 streamlit run app.py                                 # or: python main.py --invoice_path=<file>
 ```
+
+**Windows (PowerShell)**
+
+```powershell
+python -m venv invoice_agent_env; .\invoice_agent_env\Scripts\Activate.ps1
+pip install -r requirements.txt
+alembic upgrade head; python migrations/seed.py      # build + seed the database
+"XAI_API_KEY=your_key_here" | Out-File -FilePath .env -Encoding ascii
+streamlit run app.py                                 # or: python main.py --invoice_path=<file>
+```
+
+If PowerShell blocks the activate script, run `Set-ExecutionPolicy -Scope Process RemoteSigned` first (or use `invoice_agent_env\Scripts\activate.bat` from cmd).
 </details>
 
 ---
@@ -88,10 +102,6 @@ resolves into:
   Auditor, Payment), a plain-language note, and any flags. The VP, Auditor, VP
   critique loop renders as the auditor's review indented under the VP, so the
   reflection loop is something you can see.
-
-Example of an effective Critique review:
-
-![pipeline](docs/screenshots/critique.png)
 
 
 ### The dashboard
