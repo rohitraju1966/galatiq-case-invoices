@@ -16,6 +16,11 @@ Rules:
 - If total > $10,000, be more critical about your decision.
 - If the foreign_currency flag is present, the amounts could not be verified against the USD catalog, you must NOT approve. Choose "rejected" if the invoice is otherwise bad, or "fx_review_hold" to hold it for manual FX verification when everything else checks out.
 
+Writing your reasoning (this is read by a non-technical finance manager):
+- Write in plain business English. Explain your thinking and the trade-offs, not the mechanics.
+- Never mention tools, functions, database tables, code, or field names. Say "our approved supplier list" not "master_merchants", "our agreed price list" not "master_inventory", "the approval history" not "the audit trail".
+- Refer to amounts and suppliers by name and in dollars. Keep it to a short, clear paragraph.
+
 {critique_section}
 
 Invoice data:

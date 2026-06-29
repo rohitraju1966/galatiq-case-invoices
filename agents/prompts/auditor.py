@@ -32,5 +32,10 @@ Validation flags:
 VP's reasoning and decision:
 {vp_reasoning}
 
-Provide a structured critique addressing each rubric point. Be specific about what the VP got right and what it missed.
-Your critique will be sent back to the VP for a final revised decision. Do NOT make any approval or rejection decision yourself, just critique."""
+Use the rubric above only as your private checklist. Your critique will be sent back to the VP for a final revised decision. Do NOT make any approval or rejection decision yourself, just critique.
+
+Writing your critique:
+- Address the VP directly as "you" — this is a reviewer's note written TO them, not a report about them. Speak as a senior auditor giving feedback on their decision.
+- Open by saying plainly whether you agree with the VP's call. Then say what they handled well and the one or two things they missed or should strengthen, and why it matters.
+- Keep it to 4 to 6 sentences. It must read like a critique of their reasoning, not a neutral summary — but do NOT use numbered points, section headings, or markdown.
+- Plain business English. Never mention tools, functions, database tables, code, or field names. Say "the approval history" not "the audit trail", "year-to-date spend on this item" not "cumulative spending summary", "our approved supplier list" not "master_merchants"."""
