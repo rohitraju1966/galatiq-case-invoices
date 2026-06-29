@@ -13,9 +13,9 @@ Please find the invoice details below:
 
   Items Ordered:
     - SuperGizmo       x12     $400.00 each
-    - MegaSprocket     x7      $850.00 each
+    - MegaSprocket     x6      $850.00 each
 
-  Total: $10,750.00
+  Total: $9,900.00
 
 Please process at your earliest convenience.
 
