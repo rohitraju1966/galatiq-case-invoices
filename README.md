@@ -57,9 +57,7 @@ streamlit run app.py                                 # or: python main.py --invo
 
 ## UI/UX
 
-**PayPilot** is the operator-facing dashboard (Streamlit), designed for a finance
-person with no technical knowledge. They see the thinking and the verdict, never the
-plumbing: no tool names, no table names, no JSON, just plain business language.
+**PayPilot** is the operator-facing dashboard (Streamlit)
 
 ### The starter page
 
@@ -73,7 +71,7 @@ It opens the workspace, with the controls in the sidebar.
 
 ![Live pipeline](docs/screenshots/processing.png)
 
-Pick a sample invoice (or upload your own) and press **Process**. The pipeline then
+Pick a sample invoice from data/invoices folder (or upload your own) and press **Process**. The pipeline then
 streams live, a chain that builds itself stage by stage as each agent finishes:
 
 > `Reading -> Checking -> VP review -> Senior review -> Payment`
