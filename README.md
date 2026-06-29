@@ -71,6 +71,11 @@ streamlit run app.py                                 & REM or: python main.py --
 
 **PayPilot** is the operator-facing dashboard (Streamlit)
 
+### Demo
+
+https://github.com/user-attachments/assets/034afd6e-af9b-41c2-984a-2a925d7fdc88
+
+
 ### The starter page
 
 ![Starter page](docs/screenshots/landing.png)
