@@ -124,3 +124,18 @@ class InvoiceDB:
         return self.session.query(TransactionAuditLogs).filter(
             TransactionAuditLogs.trn_id == trn_id,
         ).order_by(TransactionAuditLogs.audit_log_id).all()
+
+    def get_invoice(self, trn_id: int) -> TransactionInvoices | None:
+        return self.session.query(TransactionInvoices).filter(
+            TransactionInvoices.trn_id == trn_id,
+        ).first()
+
+    def get_items(self, trn_id: int) -> list[TransactionInvoiceItems]:
+        return self.session.query(TransactionInvoiceItems).filter(
+            TransactionInvoiceItems.trn_id == trn_id,
+        ).all()
+
+    def list_invoices(self) -> list[TransactionInvoices]:
+        return self.session.query(TransactionInvoices).order_by(
+            TransactionInvoices.trn_id.desc(),
+        ).all()

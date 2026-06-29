@@ -1,6 +1,6 @@
-# AutoInvoice
+# PayPilot
 
-*Invoice Processing Automation*
+*Your accounts-payable desk, on autopilot.*
 
 A multi-agent accounts-payable system for **Acme Corp**. It ingests messy invoices
 (PDF, JSON, CSV, XML, TXT), validates them against an inventory + vendor database,
@@ -174,37 +174,117 @@ Full schema is the source of truth in [`db/models.py`](db/models.py); seed data 
 
 ---
 
-## Setup & run
+## Quickstart
 
 ```bash
-# 1. environment
-python -m venv invoice_agent_env && source invoice_agent_env/bin/activate
-pip install -r requirements.txt
-
-# 2. xAI key, create a .env file in the project root:
-#    XAI_API_KEY=your_key_here
-
-# 3. build + seed the database
-alembic upgrade head
-python migrations/seed.py
-
-# 4. run an invoice through the pipeline
-python main.py --invoice_path=data/invoices/invoice_1005.json
+make setup                                   # create venv, install deps, build + seed the DB
+echo "XAI_API_KEY=your_key_here" > .env      # add your xAI key
+make run                                     # launch the PayPilot dashboard
 ```
 
-Output is structured logs, every tool call, every agent's reasoning, and the
-final decision, plus a complete audit trail in `transaction_audit_logs`.
+That's it — three commands and the app opens in your browser. Run `make` on its
+own to list everything:
+
+| Command | What it does |
+|---|---|
+| `make setup` | One-time setup on a fresh clone: venv + install + seed |
+| `make run` | Launch the Streamlit dashboard |
+| `make cli INVOICE=data/invoices/invoice_1005.json` | Process one invoice from the command line |
+| `make seed` | Wipe and rebuild the database (inventory + merchants) |
+| `make clean` | Delete the local database |
+
+The CLI path (`make cli`) prints structured logs — every tool call, each agent's
+reasoning, and the final decision — alongside the full audit trail in
+`transaction_audit_logs`.
+
+<details>
+<summary>No <code>make</code>? The manual steps</summary>
+
+```bash
+python3.11 -m venv invoice_agent_env && source invoice_agent_env/bin/activate
+pip install -r requirements.txt
+alembic upgrade head && python migrations/seed.py    # build + seed the database
+echo "XAI_API_KEY=your_key_here" > .env
+streamlit run app.py                                 # or: python main.py --invoice_path=<file>
+```
+</details>
 
 ---
 
 ## UI/UX
 
-<!-- TODO: Streamlit dashboard. Walk through what the operator sees, invoice
-     intake, the live pipeline, flags, agent reasoning, the audit trail, and the
-     final decision. Add screenshots once built and tested. -->
+**PayPilot** is the operator-facing dashboard (Streamlit). It's designed for a
+finance person with *no* technical knowledge: they see the *thinking* and the
+*verdict*, never the plumbing. No tool names, no table names, no JSON — just plain
+business language end to end.
 
-*A Streamlit dashboard is in progress, this section will cover what an AP
-operator sees end-to-end, with screenshots.*
+### The starter page
+
+![Starter page](docs/screenshots/landing.png)
+
+A centered welcome: the PayPilot mark, a one-line description, a `Read → Check →
+Review → Pay` strip that previews the pipeline, and a single **Get started**
+button. Clicking it opens the workspace (controls move to the sidebar).
+
+### Processing an invoice — watch it think
+
+![Live pipeline](docs/screenshots/processing.png)
+
+Pick a sample invoice (or upload your own) in the sidebar and press **Process**.
+The pipeline then **streams live** — a chain builds itself stage by stage as each
+agent finishes:
+
+> `Reading ✓ → Checking ✓ → VP review ✓ → Senior review ✓ → Payment`
+
+This is driven straight off the LangGraph run (`graph.stream(stream_mode="updates")`),
+so the UI reflects the real pipeline, not a canned animation. When it finishes, it
+resolves into:
+
+- an **invoice card** with the key facts and a **verdict pill** (Approved / Paid /
+  Rejected / On hold) at a glance, and
+- the full **pipeline timeline** below it — one connected flow (not loose boxes),
+  each step showing *who acted* (Reading, Automated checks, VP of Finance, Senior
+  Auditor, Payment), a plain-language note, and any flags. The VP → Auditor → VP
+  critique loop renders as the auditor's review **indented under** the VP, so the
+  reflection loop is something you can *see*.
+
+### Plain language, always
+
+Two layers keep it readable for a non-technical user:
+
+- **A translation layer** turns every deterministic flag into finance English:
+
+  | Internal | What the user sees |
+  |---|---|
+  | `price_mismatch: WidgetB (invoice=560, master=500)` | "Price differs from agreed — WidgetB billed at $560/unit vs our $500 ($60 over)" |
+  | `unknown_merchant` | "Supplier not approved" |
+  | `stock_exceeded` | "Order larger than available stock" |
+  | `master_inventory` / `master_merchants` | "product catalog" / "approved supplier list" |
+
+- **The agent prompts** are tuned so the VP and auditor write their reasoning in
+  plain business terms — addressed to the reader, never mentioning tools or tables.
+
+### One source of truth
+
+Everything on screen is reconstructed from `transaction_audit_logs` — the same
+append-only audit trail that records each decision also drives the UI. The live
+run and a later replay from the dashboard render from the identical source, so what
+you see is always exactly what was logged.
+
+### The dashboard
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+A summary view across every processed invoice: KPI cards (invoices processed, total
+paid, approval rate, needs-attention), an outcomes bar, and a recent-invoices table.
+
+### Design
+
+A clean fintech aesthetic — Inter type, a single indigo accent, card-based layout,
+generous whitespace — deliberately *not* the default Streamlit look. The theme lives
+in [`.streamlit/config.toml`](.streamlit/config.toml) plus a small CSS layer in
+[`ui/render.py`](ui/render.py); the view layer (`ui/`) is kept separate from the
+pipeline so the two evolve independently.
 
 ---
 
