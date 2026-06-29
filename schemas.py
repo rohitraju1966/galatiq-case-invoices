@@ -5,7 +5,10 @@ class LineItem(BaseModel):
     item_name: str = Field(description="Product name as written on invoice")
     quantity: int = Field(description="Number of units ordered")
     unit_price: float = Field(description="Price per unit")
-    line_total: float = Field(description="quantity * unit_price")
+    line_total: float | None = Field(
+        default=None,
+        description="The line amount shown on the invoice for this item; null if the invoice shows no per-line amount",
+    )
 
 
 class InvoiceExtraction(BaseModel):

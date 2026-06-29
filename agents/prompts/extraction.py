@@ -5,6 +5,7 @@ Responsibilities: Extract all structured fields from the raw invoice text below.
 Rules:
 - Extract exactly what is written. Do not correct, guess, or infer missing fields.
 - If a field is not present, set it to null.
+- line_total is the per-line amount shown on the invoice. If a line shows only quantity and unit price with no amount, set line_total to null (do not compute it).
 - Dates must be in YYYY-MM-DD format.
 - Currency should be a 3-letter code (e.g. USD, EUR). Default to USD if not stated.
 

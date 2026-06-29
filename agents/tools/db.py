@@ -53,7 +53,9 @@ class InvoiceDB:
                 item_name=item.item_name,
                 quantity=item.quantity,
                 unit_price=item.unit_price,
-                line_total=item.line_total,
+                line_total=item.line_total
+                if item.line_total is not None
+                else item.quantity * item.unit_price,
             )
             self.session.add(row)
 

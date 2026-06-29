@@ -43,7 +43,7 @@ def validate_invoice(state: InvoiceState) -> dict:
     item_totals: dict[str, dict] = defaultdict(lambda: {"qty": 0, "spend": 0.0})
     for item in state["line_items"]:
         item_totals[item["item_name"]]["qty"] += item["quantity"]
-        item_totals[item["item_name"]]["spend"] += item["line_total"]
+        item_totals[item["item_name"]]["spend"] += item["quantity"] * item["unit_price"]
 
     for item_name, totals in item_totals.items():
         master, _ = db.get_item(item_name)
@@ -64,6 +64,8 @@ def validate_invoice(state: InvoiceState) -> dict:
 
     # Math checks
     for item in state["line_items"]:
+        if item["line_total"] is None:
+            continue
         expected = item["quantity"] * item["unit_price"]
         if abs(expected - item["line_total"]) > 0.01:
             flags.append(
@@ -93,7 +95,11 @@ def validate_invoice(state: InvoiceState) -> dict:
 
     # Sanity checks
     for item in state["line_items"]:
-        if item["quantity"] < 0 or item["unit_price"] < 0 or item["line_total"] < 0:
+        if (
+            item["quantity"] < 0
+            or item["unit_price"] < 0
+            or (item["line_total"] or 0) < 0
+        ):
             flags.append(f"negative_value: {item['item_name']}")
     if data["total"] and data["total"] < 0:
         flags.append("negative_total")

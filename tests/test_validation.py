@@ -124,3 +124,14 @@ def test_validate_invoice_stock_is_cumulative_across_invoices(seeded_db):
         _state([_line("WidgetA", 8, 250.0)], invoice_number="INV-NEW", trn_id=999)
     )
     assert "stock_exceeded" in _flag_prefixes(result)
+
+
+def test_validate_invoice_no_line_total_is_not_a_math_error(seeded_db):
+    line = {
+        "item_name": "WidgetA",
+        "quantity": 14,
+        "unit_price": 250.0,
+        "line_total": None,
+    }
+    result = validate_invoice(_state([line], subtotal=3500.0))
+    assert result["validation_flags"] == []
