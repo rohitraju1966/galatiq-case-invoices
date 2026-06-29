@@ -54,14 +54,14 @@ echo XAI_API_KEY=your_key_here > .env
 streamlit run app.py                                 # or: python main.py --invoice_path=<file>
 ```
 
-**Windows (PowerShell)**
+**Windows (cmd)**
 
-```powershell
-python -m venv invoice_agent_env; .\invoice_agent_env\Scripts\Activate.ps1
+```cmd
+python -m venv invoice_agent_env && invoice_agent_env\Scripts\activate.bat
 pip install -r requirements.txt
-alembic upgrade head; python migrations/seed.py      # build + seed the database
-"XAI_API_KEY=your_key_here" | Out-File -FilePath .env -Encoding ascii
-streamlit run app.py                                 # or: python main.py --invoice_path=<file>
+alembic upgrade head && python migrations/seed.py
+echo XAI_API_KEY=your_key_here > .env
+streamlit run app.py                                 & REM or: python main.py --invoice_path=<file>
 ```
 
 If PowerShell blocks the activate script, run `Set-ExecutionPolicy -Scope Process RemoteSigned` first (or use `invoice_agent_env\Scripts\activate.bat` from cmd).
