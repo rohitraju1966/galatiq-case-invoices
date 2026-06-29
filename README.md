@@ -222,59 +222,13 @@ Full schema is the source of truth in [`db/models.py`](db/models.py); seed data 
 
 ---
 
-## UI/UX
-
-**PayPilot** is the operator-facing dashboard (Streamlit), designed for a finance
-person with no technical knowledge. They see the thinking and the verdict, never the
-plumbing: no tool names, no table names, no JSON, just plain business language.
-
-### The starter page
-
-![Starter page](docs/screenshots/landing.png)
-
-A centered welcome: the PayPilot mark, a one-line description, a `Read, Check,
-Review, Pay` strip that previews the pipeline, and a single **Get started** button.
-It opens the workspace, with the controls in the sidebar.
-
-### Processing an invoice, watch it think
-
-![Live pipeline](docs/screenshots/processing.png)
-
-Pick a sample invoice (or upload your own) and press **Process**. The pipeline then
-streams live, a chain that builds itself stage by stage as each agent finishes:
-
-> `Reading -> Checking -> VP review -> Senior review -> Payment`
-
-This is driven straight off the LangGraph run (`graph.stream(stream_mode="updates")`),
-so the UI reflects the real pipeline, not a canned animation. When it finishes, it
-resolves into:
-
-- an **invoice card** with the key facts and a **verdict pill** (Approved, Paid,
-  Rejected, On hold) at a glance, and
-- the full **pipeline timeline** below it, one connected flow rather than loose
-  boxes. Each step shows who acted (Reading, Automated checks, VP of Finance, Senior
-  Auditor, Payment), a plain-language note, and any flags. The VP, Auditor, VP
-  critique loop renders as the auditor's review indented under the VP, so the
-  reflection loop is something you can see.
-
-### The dashboard
-
-![Dashboard](docs/screenshots/dashboard.png)
-
-A summary across every processed invoice: KPI cards (invoices processed, total paid,
-approval rate, needs-attention), an outcomes bar, and a recent-invoices table.
-
----
-
 ## Testing
 
 The deterministic core is unit-tested with pytest (`make test`). Validation is the
 money-critical logic and is pure, so the suite in [`tests/`](tests/) covers it
 directly: clean invoices, stock and budget overruns, unknown item and vendor, math
 errors, foreign currency, duplicate rejection, and cumulative limits across invoices.
-These map one to one onto the scenarios in the brief. The LLM stages (extraction, VP,
-auditor) are nondeterministic and are validated end to end by an LLM-as-judge harness
-rather than by unit tests.
+These map one to one onto the scenarios in the brief.
 
 ---
 
