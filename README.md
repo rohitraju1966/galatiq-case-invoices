@@ -73,7 +73,8 @@ streamlit run app.py                                 & REM or: python main.py --
 
 ### Demo
 
-<video src="docs/Demo/demo.mp4" controls width="100%"></video>
+https://github.com/user-attachments/assets/034afd6e-af9b-41c2-984a-2a925d7fdc88
+
 
 ### The starter page
 
