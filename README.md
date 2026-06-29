@@ -73,7 +73,7 @@ streamlit run app.py                                 & REM or: python main.py --
 
 ### Demo
 
-<div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.loom.com/embed/7e9338f9e239450d988f343d6f4d4b40" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
+[![Watch the demo](https://cdn.loom.com/sessions/thumbnails/7e9338f9e239450d988f343d6f4d4b40-with-play.gif)](https://www.loom.com/share/7e9338f9e239450d988f343d6f4d4b40)
 
 ### The starter page
 
